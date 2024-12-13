@@ -1,0 +1,389 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+    <div class="content">
+        <h2>Cadastro de Modelo</h2>
+
+        <!-- Filtro -->
+        <table class="table table-bordered">
+            <tbody>
+                <tr>
+                    <td>
+                        <label for="codModelo">Código do Modelo</label>
+                    </td>
+                    <td>
+                        <input type="text" id="codModelo" class="form-control w-auto" placeholder="Digite o código do modelo" maxlength="10" style="width: auto;">
+                    </td>
+                    <td>
+                        <button id="btnFiltrar" class="btn btn-primary">Filtrar</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <button class="btn btn-primary mb-3" id="btnIncluirModelo" data-toggle="modal" data-target="#modalHModelo">Incluir Modelo</button>
+
+        <table class="table table-bordered" id="tabelaHModelo">
+            <thead>
+                <tr>
+                    <th>Selecionar</th>
+                    <th>Código do Modelo</th>
+                    <th>Descrição</th>
+                    <th>ID Endpoint</th>
+                    <th>Tipo de Saída</th>
+                    <th>Pasta de Saída</th>
+                    <th>Tipo de Arquivo</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="tabelaHModeloBody">
+                <!-- Linhas de dados serão inseridas aqui -->
+            </tbody>
+        </table>
+
+        <hr>
+
+        <h3>Detalhes do Modelo</h3>
+        <button class="btn btn-primary mb-3" id="btnIncluirDetalhe" data-toggle="modal" data-target="#modalDModelo">Incluir Detalhe</button>
+        <table class="table table-bordered" id="tabelaDModelo">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Código do Modelo</th>
+                    <th>Sequência</th>
+                    <th>Campo Origem</th>
+                    <th>Campo Destino</th>
+                    <th>Permite Branco</th>
+                    <th>Tipo de Validação</th>
+                    <th>Função Formato</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="tabelaDModeloBody">
+                <!-- Linhas de detalhes serão inseridas aqui -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Modal para Inclusão/Atualização de HModelo -->
+    <div class="modal fade" id="modalHModelo" tabindex="-1" role="dialog" aria-labelledby="modalHModeloLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalHModeloLabel">Incluir Modelo</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="formHModelo">
+                        <div class="form-group">
+                            <label for="codModelo">Código do Modelo</label>
+                            <input type="text" class="form-control" id="codModeloInput" maxlength="10" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="descModelo">Descrição</label>
+                            <input type="text" class="form-control" id="descModelo" maxlength="50" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="idEndpoint">ID Endpoint</label>
+                            <input type="text" class="form-control" id="idEndpoint" maxlength="20" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="tipoSaida">Tipo de Saída</label>
+                            <input type="text" class="form-control" id="tipoSaida" maxlength="20" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="pastaSaida">Pasta de Saída</label>
+                            <input type="text" class="form-control" id="pastaSaida" maxlength="50" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="tipoArquivo">Tipo de Arquivo</label>
+                            <input type="text" class="form-control" id="tipoArquivo" maxlength="10" required>
+                        </div>
+                        <input type="hidden" id="modeloEditavel">
+                        <button type="submit" class="btn btn-primary">Salvar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Inclusão/Atualização de DModelo -->
+    <div class="modal fade" id="modalDModelo" tabindex="-1" role="dialog" aria-labelledby="modalDModeloLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalDModeloLabel">Incluir Detalhe do Modelo</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="formDModelo">
+                        <div class="form-group">
+                            <label for="seq">Sequência</label>
+                            <input type="number" class="form-control" id="seq" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="campoOrigem">Campo Origem</label>
+                            <input type="text" class="form-control" id="campoOrigem" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="campoDestino">Campo Destino</label>
+                            <input type="text" class="form-control" id="campoDestino" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="PermiteBranco">Permite Branco</label>
+                            <select class="form-control" id="PermiteBranco" required>
+                                <option value="SIM">Sim</option>
+                                <option value="Não">Não</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="tpValidacao">Tipo de Validação</label>
+                            <input type="text" class="form-control" id="tpValidacao" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="fnformato">Função Formato</label>
+                            <input type="text" class="form-control" id="fnformato" required>
+                        </div>
+                        <input type="hidden" id="codModeloDModelo">
+                        <input type="hidden" id="detalheEditavel">
+                        <button type="submit" class="btn btn-primary">Salvar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let hmodelos = [];
+        let dmodelos = [];
+
+        // Função para carregar os dados da API
+        function carregarHModelos() {
+            fetch('/api/hmodelos')
+                .then(response => response.json())
+                .then(dados => {
+                    hmodelos = dados;
+                    const tabelaCorpo = document.querySelector('#tabelaHModeloBody');
+                    tabelaCorpo.innerHTML = '';
+                    dados.forEach(dado => {
+                        const linha = document.createElement('tr');
+                        linha.innerHTML = `
+                            <td><input type="radio" name="modeloSelecionado" value="${dado.cod_modelo}"></td>
+                            <td>${dado.cod_modelo}</td>
+                            <td>${dado.desc_modelo}</td>
+                            <td>${dado.id_endpoint}</td>
+                            <td>${dado.tipo_saida}</td>
+                            <td>${dado.pasta_saida}</td>
+                            <td>${dado.tipo_arquivo}</td>
+                            <td>
+                                <button class="btn btn-warning btn-sm" onclick="abrirModalHModelo('${dado.cod_modelo}')">Editar</button>
+                                <button class="btn btn-danger btn-sm" onclick="excluirHModelo('${dado.cod_modelo}')">Excluir</button>
+                            </td>
+                        `;
+                        tabelaCorpo.appendChild(linha);
+                    });
+                });
+        }
+
+        // Função para carregar detalhes do modelo selecionado
+        function carregarDModelos(codModelo) {
+            fetch(`/api/dmodelos/${codModelo}`)
+                .then(response => response.json())
+                .then(dados => {
+                    dmodelos = dados;
+                    const tabelaCorpo = document.querySelector('#tabelaDModeloBody');
+                    tabelaCorpo.innerHTML = '';
+                    dados.forEach(dado => {
+                        const linha = document.createElement('tr');
+                        linha.innerHTML = `
+                            <td>${dado.id}</td>
+                            <td>${dado.cod_modelo}</td>
+                            <td>${dado.seq}</td>
+                            <td>${dado.campoOrigem}</td>
+                            <td>${dado.campoDestino}</td>
+                            <td>${dado.PermiteBranco}</td>
+                            <td>${dado.tpValidacao}</td>
+                            <td>${dado.fnformato}</td>
+                            <td>
+                                <button class="btn btn-warning btn-sm" onclick="abrirModalDModelo('${dado.id}')">Editar</button>
+                                <button class="btn btn-danger btn-sm" onclick="excluirDModelo('${dado.id}')">Excluir</button>
+                            </td>
+                        `;
+                        tabelaCorpo.appendChild(linha);
+                    });
+                });
+        }
+
+        // Abre o modal para incluir um novo HModelo
+        $('#formHModelo').on('submit', function(e) {
+            e.preventDefault();
+            const novoModelo = {
+                cod_modelo: document.getElementById('codModeloInput').value,
+                desc_modelo: document.getElementById('descModelo').value,
+                id_endpoint: document.getElementById('idEndpoint').value,
+                tipo_saida: document.getElementById('tipoSaida').value,
+                pasta_saida: document.getElementById('pastaSaida').value,
+                tipo_arquivo: document.getElementById('tipoArquivo').value,
+            };
+            const modeloEditavel = document.getElementById('modeloEditavel').value;
+            if (modeloEditavel) {
+                fetch(`/api/hmodelos/${modeloEditavel}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(novoModelo)
+                }).then(() => {
+                    carregarHModelos();
+                    $('#modalHModelo').modal('hide');
+                });
+            } else {
+                fetch('/api/hmodelos', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(novoModelo)
+                }).then(() => {
+                    carregarHModelos();
+                    $('#modalHModelo').modal('hide');
+                });
+            }
+            document.getElementById('formHModelo').reset();
+        });
+
+        // Função para abrir o modal de HModelo para edição
+        function abrirModalHModelo(codModelo) {
+            const modelo = hmodelos.find(m => m.cod_modelo === codModelo);
+            if (modelo) {
+                document.getElementById('codModeloInput').value = modelo.cod_modelo;
+                document.getElementById('descModelo').value = modelo.desc_modelo;
+                document.getElementById('idEndpoint').value = modelo.id_endpoint;
+                document.getElementById('tipoSaida').value = modelo.tipo_saida;
+                document.getElementById('pastaSaida').value = modelo.pasta_saida;
+                document.getElementById('tipoArquivo').value = modelo.tipo_arquivo;
+                document.getElementById('modeloEditavel').value = modelo.cod_modelo;
+
+                $('#modalHModelo').modal('show');
+            }
+        }
+
+        // Função para excluir HModelo
+        function excluirHModelo(codModelo) {
+            if (confirm('Você tem certeza que deseja excluir este modelo?')) {
+                fetch(`/api/hmodelos/${codModelo}`, { method: 'DELETE' })
+                    .then(() => {
+                        carregarHModelos();
+                    });
+            }
+        }
+
+        // Abre o modal para incluir um novo DModelo
+        $('#formDModelo').on('submit', function(e) {
+            e.preventDefault();
+            const novoDetalhe = {
+                cod_modelo: document.getElementById('codModeloDModelo').value,
+                seq: document.getElementById('seq').value,
+                campoOrigem: document.getElementById('campoOrigem').value,
+                campoDestino: document.getElementById('campoDestino').value,
+                PermiteBranco: document.getElementById('PermiteBranco').value,
+                tpValidacao: document.getElementById('tpValidacao').value,
+                fnformato: document.getElementById('fnformato').value,
+            };
+            const detalheEditavel = document.getElementById('detalheEditavel').value;
+            if (detalheEditavel) {
+                fetch(`/api/dmodelos/${detalheEditavel}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(novoDetalhe)
+                }).then(() => {
+                    carregarDModelos(novoDetalhe.cod_modelo);
+                    $('#modalDModelo').modal('hide');
+                });
+            } else {
+                fetch('/api/dmodelos', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(novoDetalhe)
+                }).then(() => {
+                    carregarDModelos(novoDetalhe.cod_modelo);
+                    $('#modalDModelo').modal('hide');
+                });
+            }
+            document.getElementById('formDModelo').reset();
+        });
+
+        // Função para abrir o modal de DModelo para edição
+        function abrirModalDModelo(id) {
+            const detalhe = dmodelos.find(d => d.id === id);
+            if (detalhe) {
+                document.getElementById('codModeloDModelo').value = detalhe.cod_modelo;
+                document.getElementById('seq').value = detalhe.seq;
+                document.getElementById('campoOrigem').value = detalhe.campoOrigem;
+                document.getElementById('campoDestino').value = detalhe.campoDestino;
+                document.getElementById('PermiteBranco').value = detalhe.PermiteBranco;
+                document.getElementById('tpValidacao').value = detalhe.tpValidacao;
+                document.getElementById('fnformato').value = detalhe.fnformato;
+                document.getElementById('detalheEditavel').value = detalhe.id;
+
+                $('#modalDModelo').modal('show');
+            }
+        }
+
+        // Função para excluir DModelo
+        function excluirDModelo(id) {
+            if (confirm('Você tem certeza que deseja excluir este detalhe?')) {
+                fetch(`/api/dmodelos/${id}`, { method: 'DELETE' })
+                    .then(() => {
+                        const codModelo = document.getElementById('codModeloDModelo').value;
+                        carregarDModelos(codModelo);
+                    });
+            }
+        }
+
+        // Filtrar HModelos
+        document.getElementById('btnFiltrar').addEventListener('click', function() {
+            const codModeloFiltro = document.getElementById('codModelo').value;
+            fetch('/api/hmodelos')
+                .then(response => response.json())
+                .then(dados => {
+                    const modelosFiltrados = dados.filter(modelo => modelo.cod_modelo.includes(codModeloFiltro));
+                    const tabelaCorpo = document.querySelector('#tabelaHModeloBody');
+                    tabelaCorpo.innerHTML = '';
+                    modelosFiltrados.forEach(dado => {
+                        const linha = document.createElement('tr');
+                        linha.innerHTML = `
+                            <td><input type="radio" name="modeloSelecionado" value="${dado.cod_modelo}"></td>
+                            <td>${dado.cod_modelo}</td>
+                            <td>${dado.desc_modelo}</td>
+                            <td>${dado.id_endpoint}</td>
+                            <td>${dado.tipo_saida}</td>
+                            <td>${dado.pasta_saida}</td>
+                            <td>${dado.tipo_arquivo}</td>
+                            <td>
+                                <button class="btn btn-warning btn-sm" onclick="abrirModalHModelo('${dado.cod_modelo}')">Editar</button>
+                                <button class="btn btn-danger btn-sm" onclick="excluirHModelo('${dado.cod_modelo}')">Excluir</button>
+                            </td>
+                        `;
+                        tabelaCorpo.appendChild(linha);
+                    });
+                });
+        });
+
+        // Evento para seleção do radio button
+        document.addEventListener('change', function(event) {
+            if (event.target.name === 'modeloSelecionado') {
+                const codModeloSelecionado = event.target.value;
+                carregarDModelos(codModeloSelecionado);
+                document.getElementById('codModeloDModelo').value = codModeloSelecionado;
+            }
+        });
+
+        // Carregar os HModelos ao iniciar
+        carregarHModelos();
+    </script>
+
+{% endblock %}

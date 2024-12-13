@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="content">
+        <h1 class="welcome-title"><strong>Bem vindo!</strong></h1>
+        
+        <div class="instructions">
+            <p>Para realizar a integração de arquivos Excel com o sistema, siga os passos abaixo:</p>
+            <ol>
+                <li>
+                    <strong>Configurar API:</strong> 
+                    Na opção <em>"Conexões API"</em>, configure a API que deseja utilizar.
+                </li>
+                <li>
+                    <strong>Relacionar campos:</strong>
+                    Na opção <em>"Modelos"</em>, faça o mapeamento entre os campos da sua planilha e os parâmetros configurados.
+                </li>
+                <li>
+                    <strong>Upload de Arquivos:</strong>
+                    Após a configuração, vá para a opção <em>"Upload de Arquivos"</em>, envie sua planilha e selecione o modelo correspondente.
+                </li>
+                <li>
+                    <strong>Verificações:</strong> 
+                    Use as opções a seguir para acompanhar o processamento dos dados:
+                    <ul>
+                        <li><em>"Consulta de Erros"</em>: Exibe inconsistências encontradas na planilha que impediram o envio para a API.</li>
+                        <li><em>"Consulta Controle API"</em>: Exibe o status dos dados que foram convertidos e enviados com sucesso.</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+
+        <p class="closing-text">Estamos aqui para facilitar o seu trabalho e garantir que suas integrações sejam eficientes e sem complicações!</p>
+    </div>
+{% endblock %}

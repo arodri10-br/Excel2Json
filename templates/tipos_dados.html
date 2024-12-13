@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+    <div class="content">
+        <h2>Manutenção de Tipos de Dados</h2>
+        <button class="btn btn-primary mb-3" id="btnIncluir" data-toggle="modal" data-target="#modalTipo">Incluir Tipo de Validação</button>
+
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Tipo de Validação</th>
+                    <th>Descrição</th>
+                    <th>Valor Mínimo</th>
+                    <th>Valor Máximo</th>
+                    <th>Permite Branco</th>
+                    <th>Permite Negativo</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="tabelaTipos">
+                <!-- Linhas de dados serão inseridas aqui -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Modal para Inclusão/Atualização -->
+    <div class="modal fade" id="modalTipo" tabindex="-1" role="dialog" aria-labelledby="modalTipoLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTipoLabel">Incluir Tipo de Validação</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="formTipo">
+                        <div class="form-group">
+                            <label for="tpValidacao">Tipo de Validação</label>
+                            <input type="text" class="form-control" id="tpValidacao" maxlength="10" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="dsValidacao">Descrição</label>
+                            <input type="text" class="form-control" id="dsValidacao" maxlength="30" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="Vlmin">Valor Mínimo</label>
+                            <input type="number" class="form-control" id="Vlmin">
+                        </div>
+                        <div class="form-group">
+                            <label for="Vlmax">Valor Máximo</label>
+                            <input type="number" class="form-control" id="Vlmax">
+                        </div>
+                        <div class="form-group">
+                            <label for="PermiteBranco">Permite Branco</label>
+                            <select class="form-control" id="PermiteBranco" required>
+                                <option value="S">Sim</option>
+                                <option value="N">Não</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="PermiteNegativo">Permite Negativo</label>
+                            <select class="form-control" id="PermiteNegativo" required>
+                                <option value="S">Sim</option>
+                                <option value="N">Não</option>
+                            </select>
+                        </div>
+                        <input type="hidden" id="tipoEditavel">
+                        <button type="submit" class="btn btn-primary">Salvar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let tiposDados = []; // Para armazenar os dados
+
+        // Função para carregar os dados da API
+        function carregarDados() {
+            fetch('/api/tipos_dados')
+                .then(response => response.json())
+                .then(dados => {
+                    tiposDados = dados; // Armazena os dados
+                    const tabelaCorpo = document.querySelector('#tabelaTipos');
+                    tabelaCorpo.innerHTML = ''; // Limpa a tabela antes de preencher
+                    dados.forEach(dado => {
+                        const linha = document.createElement('tr');
+                        linha.innerHTML = `
+                            <td>${dado.tpValidacao}</td>
+                            <td>${dado.dsValidacao}</td>
+                            <td>${dado.Vlmin || ''}</td>
+                            <td>${dado.Vlmax || ''}</td>
+                            <td>${dado.PermiteBranco}</td>
+                            <td>${dado.PermiteNegativo}</td>
+                            <td>
+                                <button class="btn btn-warning btn-sm" onclick="abrirModal('${dado.tpValidacao}')">Editar</button>
+                                <button class="btn btn-danger btn-sm" onclick="excluirDado('${dado.tpValidacao}')">Excluir</button>
+                            </td>
+                        `;
+                        tabelaCorpo.appendChild(linha);
+                    });
+                });
+        }
+
+        // Abre o modal com os dados para editar
+        function abrirModal(tpValidacao) {
+            const dado = tiposDados.find(d => d.tpValidacao === tpValidacao);
+            if (dado) {
+                document.getElementById('tpValidacao').value = dado.tpValidacao;
+                document.getElementById('dsValidacao').value = dado.dsValidacao;
+                document.getElementById('Vlmin').value = dado.Vlmin || '';
+                document.getElementById('Vlmax').value = dado.Vlmax || '';
+                document.getElementById('PermiteBranco').value = dado.PermiteBranco;
+                document.getElementById('PermiteNegativo').value = dado.PermiteNegativo;
+                document.getElementById('tipoEditavel').value = tpValidacao;
+
+                $('#modalTipo').modal('show'); // Exibe o modal
+            }
+        }
+
+        // Função para incluir ou atualizar um tipo de validação
+        $('#formTipo').on('submit', function(e) {
+            e.preventDefault(); // Previne o comportamento padrão do formulário
+            const tipoEditavel = document.getElementById('tipoEditavel').value;
+
+            const novoDado = {
+                tpValidacao: document.getElementById('tpValidacao').value,
+                dsValidacao: document.getElementById('dsValidacao').value,
+                Vlmin: document.getElementById('Vlmin').value || null,
+                Vlmax: document.getElementById('Vlmax').value || null,
+                PermiteBranco: document.getElementById('PermiteBranco').value,
+                PermiteNegativo: document.getElementById('PermiteNegativo').value
+            };
+
+            if (tipoEditavel) {
+                // Atualiza o dado
+                fetch(`/api/tipos_dados/${tipoEditavel}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(novoDado)
+                }).then(() => {
+                    carregarDados(); // Recarrega os dados
+                    $('#modalTipo').modal('hide'); // Esconde o modal
+                });
+            } else {
+                // Adiciona novo dado
+                fetch('/api/tipos_dados', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(novoDado)
+                }).then(() => {
+                    carregarDados(); // Recarrega os dados
+                    $('#modalTipo').modal('hide'); // Esconde o modal
+                });
+            }
+
+            // Limpa o formulário
+            document.getElementById('formTipo').reset();
+        });
+
+        // Função para excluir um dado
+        function excluirDado(tpValidacao) {
+            if (confirm('Você tem certeza que deseja excluir este tipo de validação?')) {
+                fetch(`/api/tipos_dados/${tpValidacao}`, { method: 'DELETE' })
+                    .then(() => {
+                        carregarDados(); // Recarrega os dados
+                    });
+            }
+        }
+
+        // Carregar dados ao iniciar a página
+        $(document).ready(function() {
+            carregarDados();
+        });
+    </script>
+
+{% endblock %}

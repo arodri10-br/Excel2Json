@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+    <div class="content">
+        <h2>Manutenção de Modelos</h2>
+        <button class="btn btn-primary mb-3" id="btnIncluir" onclick="limparFormulario()" data-toggle="modal" data-target="#modalModelo">Incluir Modelo</button>
+
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Det</th>
+                    <th>Código do Modelo</th>
+                    <th>Descrição</th>
+                    <th>ID Endpoint</th>
+                    <th>Tipo de Saída</th>
+                    <th>Pasta de Saída</th>
+                    <th>Tipo de Arquivo</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="tabelaModelos">
+                <!-- Linhas de dados serão inseridas aqui -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Modal para Inclusão/Atualização -->
+    <div class="modal fade" id="modalModelo" tabindex="-1" role="dialog" aria-labelledby="modalModeloLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalModeloLabel">Incluir Modelo</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="formModelo">
+                        <div class="form-group">
+                            <label for="cod_modelo">Código do Modelo</label>
+                            <input type="text" class="form-control" id="cod_modelo" maxlength="10" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="desc_modelo">Descrição</label>
+                            <input type="text" class="form-control" id="desc_modelo" maxlength="50" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="id_endpoint">ID Endpoint</label>
+                            <input type="number" class="form-control" id="id_endpoint">
+                        </div>
+                        <div class="form-group">
+                            <label for="tipo_saida">Tipo de Saída</label>
+                            <select class="form-control" id="tipo_saida" required>
+                                <option value="API">API</option>
+                                <option value="Arquivo">Arquivo</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="pasta_saida">Pasta de Saída</label>
+                            <input type="text" class="form-control" id="pasta_saida" maxlength="255">
+                        </div>
+                        <div class="form-group">
+                            <label for="tipo_arquivo">Tipo de Arquivo</label>
+                            <input type="text" class="form-control" id="tipo_arquivo" maxlength="50">
+                        </div>
+                        <input type="hidden" id="modeloEditavel">
+                        <button type="submit" class="btn btn-primary">Salvar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let modelos = []; // Para armazenar os dados
+
+        // Função para carregar os dados da API
+        function carregarDados() {
+            fetch('/api/modelos')
+                .then(response => response.json())
+                .then(dados => {
+                    modelos = dados; // Armazena os dados
+                    const tabelaCorpo = document.querySelector('#tabelaModelos');
+                    tabelaCorpo.innerHTML = ''; // Limpa a tabela antes de preencher
+                    dados.forEach(dado => {
+                        const linha = document.createElement('tr');
+                        linha.innerHTML = `
+                            <td><button class="btn btn-info btn-sm" onclick="verDetalhes('${dado.cod_modelo}')">Detalhes</button></td>
+                            <td>${dado.cod_modelo}</td>
+                            <td>${dado.desc_modelo}</td>
+                            <td>${dado.id_endpoint || ''}</td>
+                            <td>${dado.tipo_saida}</td>
+                            <td>${dado.pasta_saida || ''}</td>
+                            <td>${dado.tipo_arquivo || ''}</td>
+                            <td>
+                                <button class="btn btn-warning btn-sm" onclick="abrirModal('${dado.cod_modelo}')">Editar</button>
+                                <button class="btn btn-danger btn-sm" onclick="excluirDado('${dado.cod_modelo}')">Excluir</button>
+                            </td>
+                        `;
+                        tabelaCorpo.appendChild(linha);
+                    });
+                });
+        }
+
+        // Função para abrir detalhes
+        function verDetalhes(cod_modelo) {
+            const modelo = modelos.find(m => m.cod_modelo === cod_modelo);
+            window.location.href = `/dmodelo?cod_modelo=${cod_modelo}`;
+
+            /*
+            if (modelo) {
+                alert(`Detalhes do Modelo: \nCódigo: ${modelo.cod_modelo}\nDescrição: ${modelo.desc_modelo}\nTipo de Saída: ${modelo.tipo_saida}`);
+                render_template('dmodelo.html', param_cod_modelo=cod_modelo,
+                       sidebar_items=sidebar_items,
+                       usuario_nome=session.get('usuario_nome'), 
+                       usuario_email=session.get('usuario_email'), 
+                       usuario_perfil=session.get('usuario_perfil'))
+                        }
+            */
+        }
+
+        // Função para limpar os campos do formulário ao incluir um novo modelo
+        function limparFormulario() {
+            document.getElementById('formModelo').reset();  // Reseta todos os campos do formulário
+            document.getElementById('modeloEditavel').value = '';  // Reseta o campo oculto para garantir que é um novo modelo
+        }
+
+        // Abre o modal com os dados para editar
+        function abrirModal(cod_modelo) {
+            const modelo = modelos.find(m => m.cod_modelo === cod_modelo);
+            if (modelo) {
+                document.getElementById('cod_modelo').value = modelo.cod_modelo;
+                document.getElementById('desc_modelo').value = modelo.desc_modelo;
+                document.getElementById('id_endpoint').value = modelo.id_endpoint || '';
+                document.getElementById('tipo_saida').value = modelo.tipo_saida;
+                document.getElementById('pasta_saida').value = modelo.pasta_saida || '';
+                document.getElementById('tipo_arquivo').value = modelo.tipo_arquivo || '';
+                document.getElementById('modeloEditavel').value = cod_modelo;
+
+                $('#modalModelo').modal('show'); // Exibe o modal
+            }
+        }
+
+        // Função para incluir ou atualizar um modelo
+        $('#formModelo').on('submit', function(e) {
+            e.preventDefault(); // Previne o comportamento padrão do formulário
+            const modeloEditavel = document.getElementById('modeloEditavel').value;
+
+            const novoModelo = {
+                cod_modelo: document.getElementById('cod_modelo').value,
+                desc_modelo: document.getElementById('desc_modelo').value,
+                id_endpoint: document.getElementById('id_endpoint').value,
+                tipo_saida: document.getElementById('tipo_saida').value,
+                pasta_saida: document.getElementById('pasta_saida').value,
+                tipo_arquivo: document.getElementById('tipo_arquivo').value,
+            };
+
+            if (modeloEditavel) {
+                // Atualiza o modelo
+                fetch(`/api/modelos/${modeloEditavel}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(novoModelo)
+                }).then(response => response.json())
+                  .then(() => {
+                      carregarDados();
+                      $('#modalModelo').modal('hide');
+                  });
+            } else {
+                // Adiciona um novo modelo
+                fetch('/api/modelos', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(novoModelo)
+                }).then(response => response.json())
+                  .then(() => {
+                      carregarDados();
+                      $('#modalModelo').modal('hide');
+                  });
+            }
+        });
+
+        // Função para excluir um modelo
+        function excluirDado(cod_modelo) {
+            if (confirm('Tem certeza que deseja excluir este modelo?')) {
+                fetch(`/api/modelos/${cod_modelo}`, {
+                    method: 'DELETE'
+                }).then(response => response.json())
+                  .then(() => carregarDados());
+            }
+        }
+
+        // Carrega os dados quando a página é carregada
+        document.addEventListener('DOMContentLoaded', carregarDados);
+
+    </script>
+
+{% endblock %}

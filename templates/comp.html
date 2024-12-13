@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container mt-5">
+    <h2>Consulta de Erros</h2>
+
+    <div class="form-group">
+        <label for="filtroData">Filtrar por Data:</label>
+        <select class="form-control" id="filtroData">
+            <option value="nenhum">Nenhum</option>
+            <option value="dia">Dia</option>
+            <option value="mes">Mês</option>
+            <option value="data_especifica">Data Específica</option>
+        </select>
+    </div>
+
+    <div class="form-group" id="filtroDia" style="display:none;">
+        <label for="dataInicio">Selecione um Dia:</label>
+        <input type="date" class="form-control" id="dataInicio">
+    </div>
+
+    <div class="form-group" id="filtroMes" style="display:none;">
+        <label for="mesInicio">Selecione um Mês:</label>
+        <input type="month" class="form-control" id="mesInicio">
+    </div>
+
+    <div class="form-group" id="filtroDataEspecifica" style="display:none;">
+        <label for="dataEspecifica">Selecione uma Data Específica:</label>
+        <input type="date" class="form-control" id="dataEspecifica">
+        <button class="btn btn-primary mt-2" id="btnPesquisar">Pesquisar</button>
+    </div>
+
+    <div style="max-height: 400px; overflow-y: auto;">
+        <table class="table table-bordered" id="tabelaLogProcessamento" style="width: 75%;">
+            <thead>
+                <tr>
+                    <th>Selecionar</th>
+                    <th>ID</th>
+                    <th>Arquivo</th>
+                    <th>Data Início</th>
+                    <th>Status</th>
+                    <th>Mensagem</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Os dados serão carregados aqui via Ajax -->
+            </tbody>
+        </table>
+    </div>
+
+    <table class="table table-bordered" id="tabelaLogErros">
+        <thead>
+            <tr>
+                <th>ID Erro</th>
+                <th>ID Log</th>
+                <th>Mensagem Erro</th>
+                <th>Data Erro</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Os dados dos erros serão carregados aqui via Ajax -->
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal para exibir mensagem completa -->
+<div class="modal fade" id="modalMensagemErro" tabindex="-1" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalLabel">Mensagem Completa</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="mensagemErroCompleta">
+                <!-- Mensagem completa aqui -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    // Carregar dados da tabela log_processamento automaticamente ao abrir a página
+    carregarLogs('dia');
+
+    function carregarLogs(filtro, data = null) {
+        let dataParam = null;
+        if (filtro === 'dia') {
+            dataParam = new Date().toISOString().slice(0, 10);
+        } else if (filtro === 'mes') {
+            const primeiroDiaMes = new Date();
+            primeiroDiaMes.setDate(1);
+            dataParam = primeiroDiaMes.toISOString().slice(0, 10);
+        } else if (filtro === 'data_especifica') {
+            dataParam = $('#dataEspecifica').val();
+        }
+
+        $.ajax({
+            url: '/api/log_processamento',
+            method: 'GET',
+            data: { filtro: filtro, data: dataParam },
+            success: function(data) {
+                $('#tabelaLogProcessamento tbody').empty();
+                $.each(data, function(i, log) {
+                    $('#tabelaLogProcessamento tbody').append(`
+                        <tr>
+                            <td><input type="radio" name="logSelecionado" value="${log.id_log}"></td>
+                            <td>${log.id_log}</td>
+                            <td>${log.arquivo}</td>
+                            <td>${new Date(log.data_inicio).toLocaleString('pt-BR')}</td>
+                            <td>${log.status}</td>
+                            <td>${log.mensagem}</td>
+                        </tr>
+                    `);
+                });
+            }
+        });
+    }
+
+    // Carregar dados da tabela log_erros com base na seleção do log_processamento
+    function carregarErros(id_log) {
+        $.ajax({
+            url: '/api/log_erros',
+            method: 'GET',
+            data: { id_log: id_log },
+            success: function(data) {
+                $('#tabelaLogErros tbody').empty();
+                $.each(data, function(i, erro) {
+                    $('#tabelaLogErros tbody').append(`
+                        <tr>
+                            <td>${erro.id_erro}</td>
+                            <td>${erro.id_log}</td>
+                            <td class="mensagem-erro" data-mensagem="${erro.mensagem_erro}">${erro.mensagem_erro.substring(0, 80)}...</td>
+                            <td>${new Date(erro.data_erro).toLocaleString('pt-BR')}</td>
+                        </tr>
+                    `);
+                });
+            }
+        });
+    }
+
+    // Filtros de data
+    $('#filtroData').change(function() {
+        const filtro = $(this).val();
+        $('#filtroDia').toggle(filtro === 'dia');
+        $('#filtroMes').toggle(filtro === 'mes');
+        $('#filtroDataEspecifica').toggle(filtro === 'data_especifica');
+
+        // Carregar logs conforme a seleção inicial
+        if (filtro === 'dia') {
+            carregarLogs('dia');
+        } else if (filtro === 'mes') {
+            carregarLogs('mes');
+        }
+    });
+
+    $('#btnPesquisar').click(function() {
+        const filtro = $('#filtroData').val();
+        if (filtro === 'data_especifica') {
+            carregarLogs('data_especifica');
+        }
+    });
+
+    // Carregar erros ao selecionar um log
+    $(document).on('change', 'input[name="logSelecionado"]', function() {
+        const id_log = $(this).val();
+        carregarErros(id_log);
+    });
+
+    // Exibir mensagem completa ao clicar na mensagem de erro
+    $(document).on('click', '.mensagem-erro', function() {
+        const mensagemCompleta = $(this).data('mensagem');
+        $('#mensagemErroCompleta').text(mensagemCompleta);
+        $('#modalMensagemErro').modal('show');
+    });
+});
+</script>
+
+{% endblock %}

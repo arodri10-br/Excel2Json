@@ -1,0 +1,203 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div>
+    <!-- div class="container mt-5"></div> -->
+    <h2>Consulta Log de Processamento</h2>
+
+    <div class="form-group">
+        <label for="filtroData">Filtrar por Data:</label>
+        <select class="form-control" id="filtroData">
+            <option value="dia" selected>Dia</option>
+            <option value="mes">Mês</option>
+            <option value="data_especifica">Data Específica</option>
+            <option value="nenhum">Nenhum</option>
+        </select>
+    </div>
+
+    <!-- Campo para Data Específica (exibido apenas quando selecionado) -->
+    <div class="form-group" id="filtroDataEspecifica" style="display:none;">
+        <label for="dataEspecifica">Selecione a Data Específica:</label>
+        <input type="date" class="form-control" id="dataEspecifica">
+        <button class="btn btn-primary mt-2" id="btnPesquisar">Pesquisar</button>
+    </div>
+    <div style="max-height: 400px; overflow-y: auto;">
+        <table class="table table-bordered" id="tabelaLogProcessamento">
+            <thead>
+                <tr>
+                    <th>Selecionar</th>
+                    <th>ID</th>
+                    <th>Arquivo</th>
+                    <th>Data Início</th>
+                    <th>Status</th>
+                    <th>Mensagem</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Os dados serão carregados aqui via Ajax -->
+            </tbody>
+        </table>
+    </div>
+    <table class="table table-bordered" id="tabelaLogErros">
+        <thead>
+            <tr>
+                <th>ID Erro</th>
+                <th>ID Log</th>
+                <th>Mensagem Erro</th>
+                <th>Data Erro</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Os dados dos erros serão carregados aqui via Ajax -->
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal para exibir mensagem completa -->
+<div class="modal fade" id="modalMensagemErro" tabindex="-1" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalLabel">Mensagem Completa</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="mensagemErroCompleta">
+                <!-- Mensagem completa aqui -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    // Função para obter a data atual no formato yyyy-mm-dd
+    function obterDataAtual() {
+        const hoje = new Date();
+        const ano = hoje.getFullYear();
+        const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+        const dia = String(hoje.getDate()).padStart(2, '0');
+        return `${ano}-${mes}-${dia}`;
+    }
+
+    // Função para obter o primeiro dia do mês no formato yyyy-mm-dd
+    function obterPrimeiroDiaDoMes() {
+        const hoje = new Date();
+        const ano = hoje.getFullYear();
+        const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+        return `${ano}-${mes}-01`;
+    }
+
+    // Carregar dados da tabela log_processamento
+    function carregarLogs(filtro, valorInicio = '', valorFim = '') {
+        $.ajax({
+            url: '/api/log_processamento',
+            method: 'GET',
+            data: { filtro: filtro, valorInicio: valorInicio, valorFim: valorFim },
+            success: function(data) {
+                $('#tabelaLogProcessamento tbody').empty();
+                if (data.length > 0) {
+                    $.each(data, function(i, log) {
+                        $('#tabelaLogProcessamento tbody').append(`
+                            <tr>
+                                <td><input type="radio" name="logSelecionado" value="${log.id_log}"></td>
+                                <td>${log.id_log}</td>
+                                <td>${log.arquivo}</td>
+                                <td>${log.data_inicio}</td>
+                                <td>${log.status}</td>
+                                <td>${log.mensagem}</td>
+                            </tr>
+                        `);
+                    });
+                } else {
+                    $('#tabelaLogProcessamento tbody').append('<tr><td colspan="6">Nenhum registro encontrado.</td></tr>');
+                }
+            },
+            error: function() {
+                $('#tabelaLogProcessamento tbody').append('<tr><td colspan="6">Erro ao carregar os dados.</td></tr>');
+            }
+        });
+    }
+
+    // Carregar dados da tabela log_erros com base na seleção do log_processamento
+    function carregarErros(id_log) {
+        $.ajax({
+            url: `/api/log_erros/${id_log}`,
+            method: 'GET',
+            success: function(data) {
+                $('#tabelaLogErros tbody').empty();
+                if (data.length > 0) {
+                    $.each(data, function(i, erro) {
+                        $('#tabelaLogErros tbody').append(`
+                            <tr>
+                                <td>${erro.id_erro}</td>
+                                <td>${erro.id_log}</td>
+                                <td class="mensagem-erro" data-mensagem="${erro.mensagem_erro}">${erro.mensagem_erro.substring(0, 80)}...</td>
+                                <td>${erro.data_erro}</td>
+                            </tr>
+                        `);
+                    });
+                } else {
+                    $('#tabelaLogErros tbody').append('<tr><td colspan="4">Nenhum erro encontrado.</td></tr>');
+                }
+            },
+            error: function() {
+                $('#tabelaLogErros tbody').append('<tr><td colspan="4">Erro ao carregar os dados.</td></tr>');
+            }
+        });
+    }
+
+    // Filtros de data
+    $('#filtroData').change(function() {
+        const filtro = $(this).val();
+        if (filtro === 'dia') {
+            $('#filtroDataEspecifica').hide();
+            carregarLogs('dia', obterDataAtual());
+        } else if (filtro === 'mes') {
+            $('#filtroDataEspecifica').hide();
+            const inicioDoMes = obterPrimeiroDiaDoMes();
+            const dataAtual = obterDataAtual();
+            carregarLogs('mes', inicioDoMes, dataAtual);
+        } else if (filtro === 'data_especifica') {
+            $('#filtroDataEspecifica').show();
+        } else {
+            $('#filtroDataEspecifica').hide();
+            carregarLogs();
+        }
+    });
+
+    // Pesquisa por data específica
+    $('#btnPesquisar').click(function() {
+        const dataSelecionada = $('#dataEspecifica').val();
+        if (dataSelecionada) {
+            carregarLogs('data_especifica', dataSelecionada);
+        } else {
+            alert("Por favor, selecione uma data válida.");
+        }
+    });
+
+    // Carregar erros ao selecionar um log
+    $(document).on('change', 'input[name="logSelecionado"]', function() {
+        const id_log = $(this).val();
+        carregarErros(id_log);
+    });
+
+    // Exibir mensagem completa ao clicar na mensagem de erro
+    $(document).on('click', '.mensagem-erro', function() {
+        const mensagemCompleta = $(this).data('mensagem');
+        $('#mensagemErroCompleta').text(mensagemCompleta);
+        $('#modalMensagemErro').modal('show');
+    });
+
+    // Carregar logs ao abrir a página, com o filtro "dia" usando a data atual
+    carregarLogs('dia', obterDataAtual());
+});
+</script>
+
+{% endblock %}

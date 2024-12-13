@@ -1,0 +1,251 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="content">
+    <h2>Gerenciamento de Conexões</h2>
+    <button class="btn btn-primary mb-3" id="btnIncluirConexao" data-toggle="modal" data-target="#modalConexao">Incluir Conexão</button>
+
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Selecionar</th>
+                <th>Nome</th>
+                <th>Usuário</th>
+                <th>Senha</th>
+                <th>Tipo de Autenticação</th>
+                <th>URL Base</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody id="tabelaConexoes">
+            <!-- Linhas de dados das conexões serão inseridas aqui -->
+        </tbody>
+    </table>
+
+    <h3>Endpoints da Conexão</h3>
+    <button class="btn btn-primary mb-3" id="btnIncluirEndpoint" data-toggle="modal" data-target="#modalEndpoint" disabled>Incluir Endpoint</button>
+
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Endpoint</th>
+                <th>Método</th>
+                <th>Descrição</th>
+                <th>Swagger URL</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody id="tabelaEndpoints">
+            <!-- Linhas de dados dos endpoints serão inseridas aqui -->
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal para Inclusão/Atualização de Conexão -->
+<div class="modal fade" id="modalConexao" tabindex="-1" role="dialog" aria-labelledby="modalConexaoLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalConexaoLabel">Incluir Conexão</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="formConexao">
+                    <div class="form-group">
+                        <label for="nome">Nome</label>
+                        <input type="text" class="form-control" id="nome" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="usuario">Usuário</label>
+                        <input type="text" class="form-control" id="usuario" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="senha">Senha</label>
+                        <input type="password" class="form-control" id="senha" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="tipo_autenticacao">Tipo de Autenticação</label>
+                        <select class="form-control" id="tipo_autenticacao" required>
+                            <option value="Basic">Basic</option>
+                            <option value="Bearer">Bearer</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="url_base">URL Base</label>
+                        <input type="text" class="form-control" id="url_base" required>
+                    </div>
+                    <input type="hidden" id="conexaoEditavel">
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Inclusão/Atualização de Endpoint -->
+<div class="modal fade" id="modalEndpoint" tabindex="-1" role="dialog" aria-labelledby="modalEndpointLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEndpointLabel">Incluir Endpoint</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="formEndpoint">
+                    <div class="form-group">
+                        <label for="endpoint">Endpoint</label>
+                        <input type="text" class="form-control" id="endpoint" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="metodo">Método</label>
+                        <select class="form-control" id="metodo" required>
+                            <option value="GET">GET</option>
+                            <option value="POST">POST</option>
+                            <option value="PUT">PUT</option>
+                            <option value="DELETE">DELETE</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="descricao">Descrição</label>
+                        <input type="text" class="form-control" id="descricao" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="swagger_url">Swagger URL</label>
+                        <input type="text" class="form-control" id="swagger_url">
+                    </div>
+                    <input type="hidden" id="endpointEditavel">
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    let conexoes = [];
+    let endpoints = [];
+    let conexaoSelecionada = null;
+
+    // Função para carregar as conexões da API
+    function carregarConexoes() {
+        fetch('/api/conexoes')
+            .then(response => response.json())
+            .then(dados => {
+                conexoes = dados;
+                const tabelaCorpo = document.querySelector('#tabelaConexoes');
+                tabelaCorpo.innerHTML = '';
+
+                conexoes.forEach(conexao => {
+                    const linha = document.createElement('tr');
+                    linha.innerHTML = `
+                        <td><input type="radio" name="conexaoRadio" value="${conexao.id}" onchange="selecionarConexao(${conexao.id})"></td>
+                        <td>${conexao.nome}</td>
+                        <td>${conexao.usuario}</td>
+                        <td>${conexao.senha}</td>
+                        <td>${conexao.tipo_autenticacao}</td>
+                        <td>${conexao.url_base}</td>
+                        <td>
+                            <button class="btn btn-warning btn-sm" onclick="abrirModalConexao(${conexao.id})">Editar</button>
+                            <button class="btn btn-danger btn-sm" onclick="excluirConexao(${conexao.id})">Excluir</button>
+                        </td>
+                    `;
+                    tabelaCorpo.appendChild(linha);
+                });
+            });
+    }
+
+    // Função para carregar os endpoints da API com base na conexão selecionada
+    function carregarEndpoints(idConexao) {
+        fetch(`/api/conexoes/${idConexao}/endpoints`)
+            .then(response => response.json())
+            .then(dados => {
+                endpoints = dados;
+                const tabelaCorpo = document.querySelector('#tabelaEndpoints');
+                tabelaCorpo.innerHTML = '';
+
+                endpoints.forEach(endpoint => {
+                    const linha = document.createElement('tr');
+                    linha.innerHTML = `
+                        <td>${endpoint.endpoint}</td>
+                        <td>${endpoint.metodo}</td>
+                        <td>${endpoint.descricao}</td>
+                        <td>${endpoint.swagger_url}</td>
+                        <td>
+                            <button class="btn btn-warning btn-sm" onclick="abrirModalEndpoint(${endpoint.id})">Editar</button>
+                            <button class="btn btn-danger btn-sm" onclick="excluirEndpoint(${endpoint.id})">Excluir</button>
+                        </td>
+                    `;
+                    tabelaCorpo.appendChild(linha);
+                });
+            });
+    }
+
+    // Função para filtrar os endpoints da conexão selecionada
+    function selecionarConexao(idConexao) {
+        conexaoSelecionada = idConexao;
+        carregarEndpoints(idConexao);
+        document.getElementById("btnIncluirEndpoint").disabled = false;
+    }
+
+    // Função para abrir o modal de conexão
+    function abrirModalConexao(idConexao) {
+        const conexao = conexoes.find(c => c.id === idConexao);
+        if (conexao) {
+            $('#nome').val(conexao.nome);
+            $('#usuario').val(conexao.usuario);
+            $('#senha').val(conexao.senha);
+            $('#tipo_autenticacao').val(conexao.tipo_autenticacao);
+            $('#url_base').val(conexao.url_base);
+            $('#conexaoEditavel').val(conexao.id);
+
+            $('#modalConexao').modal('show');
+        }
+    }
+
+    // Função para abrir o modal de endpoint
+    function abrirModalEndpoint(idEndpoint) {
+        const endpoint = endpoints.find(e => e.id === idEndpoint);
+        if (endpoint) {
+            $('#endpoint').val(endpoint.endpoint);
+            $('#metodo').val(endpoint.metodo);
+            $('#descricao').val(endpoint.descricao);
+            $('#swagger_url').val(endpoint.swagger_url);
+            $('#endpointEditavel').val(endpoint.id);
+
+            $('#modalEndpoint').modal('show');
+        }
+    }
+
+    // Função para excluir uma conexão
+    function excluirConexao(idConexao) {
+        fetch(`/api/conexoes/${idConexao}`, {
+            method: 'DELETE'
+        }).then(() => {
+            carregarConexoes();
+        });
+    }
+
+    // Função para excluir um endpoint
+    function excluirEndpoint(idEndpoint) {
+        fetch(`/api/endpoints/${idEndpoint}`, {
+            method: 'DELETE'
+        }).then(() => {
+            carregarEndpoints(conexaoSelecionada);
+        });
+    }
+
+    // Inicializa o carregamento de dados
+    $(document).ready(function() {
+        carregarConexoes();
+    });
+</script>
+
+{% endblock %}

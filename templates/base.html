@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>{{ title }} - Excel 2 Json</title>
+</head>
+<body>
+    <div class="navbar">
+        <table style="border-collapse: collapse; width: 100%;">
+            <tbody>
+                <tr>
+                    <td style="width: 5%;"><a href="{{ url_for('home') }}"><img class="logo" src="/static/logo_excel2json.png" alt="Logo Excel2Json" /></a></td>
+                    <td style="width: 80%; text-align: center;">
+                        <h1><a href="{{ url_for('home') }}" style="color: white; text-decoration: none;">Excel 2 Json</a></h1>
+                    </td>
+                    <td style="width: 10%; text-align: right;">
+                        <p>Usuário: {{ usuario_nome }}</p>
+                        <p>Perfil: {{ usuario_perfil }}</p>
+                    </td>
+                    <td style="width: 5%;"><a href="https://www.actionsys.com.br" target="_blank"><img class="logo-action" src="/static/logo_action.png" alt="Logo Action" /></a></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="main-container">
+        <div class="sidebar">
+            {% for item in sidebar_items %}
+                <a href="{{ item.url }}">{{ item.name }}</a>
+            {% endfor %}
+        </div>
+
+        <div class="content">
+            {% block content %}
+            {% endblock %}
+        </div>
+    </div>
+</body>
+</html>

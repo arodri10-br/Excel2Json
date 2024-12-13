@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+    <div class="content">
+        <h2>Gerenciamento de Usuários</h2>
+        <button class="btn btn-primary mb-3" id="btnIncluir" data-toggle="modal" data-target="#modalUsuario">Incluir Usuário</button>
+
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Email</th>
+                    <th>Telefone</th>
+                    <th>Status</th>
+                    <th>Perfil</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="tabelaUsuarios">
+                <!-- Linhas de dados serão inseridas aqui -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Modal para Inclusão/Atualização -->
+    <div class="modal fade" id="modalUsuario" tabindex="-1" role="dialog" aria-labelledby="modalUsuarioLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalUsuarioLabel">Incluir/Editar Usuário</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="formUsuario">
+                        <div class="form-group">
+                            <label for="nome">Nome</label>
+                            <input type="text" class="form-control" id="nome" maxlength="100" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input type="email" class="form-control" id="email" maxlength="100" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="senha">Senha</label>
+                            <input type="password" class="form-control" id="senha" maxlength="255" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="telefone">Telefone</label>
+                            <input type="text" class="form-control" id="telefone" maxlength="20">
+                        </div>
+                        <div class="form-group">
+                            <label for="status">Status</label>
+                            <select class="form-control" id="status" required>
+                                <option value="A">Ativo</option>
+                                <option value="I">Inativo</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="perfil">Perfil</label>
+                            <select class="form-control" id="perfil" required>
+                                <option value="Admin Action">Admin Action</option>
+                                <option value="Admin Cliente">Admin Cliente</option>
+                                <option value="Usuario">Usuário</option>
+                            </select>
+                        </div>
+                        <input type="hidden" id="usuarioEditavel">
+                        <button type="submit" class="btn btn-primary">Salvar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let usuarios = []; // Para armazenar os dados
+
+        // Função para carregar os dados da API
+        function carregarDados() {
+            fetch('/api/sys_users')
+                .then(response => response.json())
+                .then(dados => {
+                    usuarios = dados; // Armazena os dados
+                    const tabelaCorpo = document.querySelector('#tabelaUsuarios');
+                    tabelaCorpo.innerHTML = ''; // Limpa a tabela antes de preencher
+                    dados.forEach(usuario => {
+                        const linha = document.createElement('tr');
+                        linha.innerHTML = `
+                            <td>${usuario.nome}</td>
+                            <td>${usuario.email}</td>
+                            <td>${usuario.telefone || ''}</td>
+                            <td>${usuario.status}</td>
+                            <td>${usuario.perfil}</td>
+                            <td>
+                                <button class="btn btn-warning btn-sm" onclick="abrirModal('${usuario.email}')">Editar</button>
+                                <button class="btn btn-danger btn-sm" onclick="excluirUsuario('${usuario.email}')">Excluir</button>
+                            </td>
+                        `;
+                        tabelaCorpo.appendChild(linha);
+                    });
+                });
+        }
+
+        // Abre o modal com os dados para editar
+        function abrirModal(email) {
+            const usuario = usuarios.find(u => u.email === email);
+            if (usuario) {
+                document.getElementById('nome').value = usuario.nome;
+                document.getElementById('email').value = usuario.email;
+                document.getElementById('senha').value = usuario.senha;
+                document.getElementById('telefone').value = usuario.telefone || '';
+                document.getElementById('status').value = usuario.status;
+                document.getElementById('perfil').value = usuario.perfil;
+                document.getElementById('usuarioEditavel').value = email;
+
+                $('#modalUsuario').modal('show'); // Exibe o modal
+            }
+        }
+
+        // Função para incluir ou atualizar um usuário
+        $('#formUsuario').on('submit', function(e) {
+            e.preventDefault(); // Previne o comportamento padrão do formulário
+            const usuarioEditavel = document.getElementById('usuarioEditavel').value;
+
+            const novoUsuario = {
+                nome: document.getElementById('nome').value,
+                email: document.getElementById('email').value,
+                senha: document.getElementById('senha').value,
+                telefone: document.getElementById('telefone').value || null,
+                status: document.getElementById('status').value,
+                perfil: document.getElementById('perfil').value
+            };
+
+            if (usuarioEditavel) {
+                // Atualiza o usuário
+                fetch(`/api/sys_users/${usuarioEditavel}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(novoUsuario)
+                }).then(() => {
+                    carregarDados(); // Recarrega os dados
+                    $('#modalUsuario').modal('hide'); // Esconde o modal
+                });
+            } else {
+                // Adiciona novo usuário
+                fetch('/api/sys_users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(novoUsuario)
+                }).then(() => {
+                    carregarDados(); // Recarrega os dados
+                    $('#modalUsuario').modal('hide'); // Esconde o modal
+                });
+            }
+
+            // Limpa o formulário
+            document.getElementById('formUsuario').reset();
+        });
+
+        // Função para excluir um usuário
+        function excluirUsuario(email) {
+            if (confirm('Você tem certeza que deseja excluir este usuário?')) {
+                fetch(`/api/sys_users/${email}`, { method: 'DELETE' })
+                    .then(() => {
+                        carregarDados(); // Recarrega os dados
+                    });
+            }
+        }
+
+        // Carregar dados ao iniciar a página
+        $(document).ready(function() {
+            carregarDados();
+        });
+    </script>
+
+{% endblock %}
